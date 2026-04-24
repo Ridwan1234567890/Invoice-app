@@ -1,0 +1,1134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Invoice App</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=League+Spartan:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+/* ════════════ RESET ════════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;-webkit-font-smoothing:antialiased}
+body{font-family:'League Spartan',sans-serif;min-height:100vh;overflow-x:hidden;transition:background .3s,color .3s}
+
+/* ════════════ TOKENS ════════════ */
+:root{
+  --purple:#7C5DFA;--purple-h:#9277FF;
+  --bg:#F8F8FB;--card:#FFFFFF;--card2:#F9FAFE;
+  --sidebar:#1E2139;--sidebar2:#252945;
+  --txt1:#0C0E16;--txt2:#888EB0;--txt3:#7E88C3;
+  --border:#DFE3FA;--inp:#FFFFFF;--inp-b:#DFE3FA;
+  --overlay:rgba(0,0,0,.5);--form-bg:#FFFFFF;
+  --red:#EC5757;--red-h:#FF9277;
+  --paid-c:#33D69F;--paid-bg:rgba(51,214,159,.065);
+  --pend-c:#FF8F00;--pend-bg:rgba(255,143,0,.065);
+  --draft-c:#373B53;--draft-bg:rgba(55,59,83,.065);
+  --shadow:0 10px 20px rgba(72,84,159,.1);
+  --total-bg:#373B53;
+  --scroll:#DFE3FA;
+}
+[data-dark="1"]{
+  --bg:#141625;--card:#1E2139;--card2:#252945;
+  --txt1:#FFFFFF;--txt2:#DFE3FA;--txt3:#888EB0;
+  --border:#252945;--inp:#1E2139;--inp-b:#252945;
+  --overlay:rgba(0,0,0,.72);--form-bg:#141625;
+  --draft-c:#DFE3FA;--draft-bg:rgba(223,227,250,.065);
+  --total-bg:#0C0E16;--scroll:#252945;
+}
+body{background:var(--bg);color:var(--txt1)}
+
+/* ════════════ SHELL ════════════ */
+.shell{display:flex;min-height:100vh}
+
+/* ── Desktop sidebar ── */
+.sidebar{
+  position:fixed;left:0;top:0;bottom:0;width:103px;
+  background:var(--sidebar);border-radius:0 20px 20px 0;
+  display:flex;flex-direction:column;align-items:center;z-index:300;
+}
+.s-logo{
+  width:103px;height:103px;flex-shrink:0;
+  background:var(--purple);border-radius:0 20px 20px 0;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.s-logo::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;
+  height:50%;background:var(--purple-h);border-radius:20px 0 0 0;
+}
+.s-logo svg{position:relative;z-index:1}
+.s-bot{margin-top:auto;width:100%;display:flex;flex-direction:column;align-items:center}
+.s-rule{width:100%;height:1px;background:rgba(255,255,255,.12)}
+.s-btn{
+  width:103px;height:72px;background:none;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:#888EB0;transition:color .2s;
+}
+.s-btn:hover{color:#DFE3FA}
+.s-btn:focus-visible{outline:2px solid var(--purple);outline-offset:-3px}
+.s-avatar{
+  width:40px;height:40px;border-radius:50%;
+  background:#858BB2;display:flex;align-items:center;justify-content:center;
+  font-size:12px;font-weight:700;color:#fff;
+  margin:8px 0 12px;border:2px solid transparent;
+  cursor:pointer;transition:border-color .2s;
+}
+.s-avatar:hover{border-color:var(--purple)}
+
+/* ── Mobile/tablet topbar ── */
+.topbar{
+  position:fixed;top:0;left:0;right:0;height:72px;
+  background:var(--sidebar);display:none;align-items:center;z-index:300;
+}
+.t-logo{
+  width:72px;height:72px;flex-shrink:0;
+  background:var(--purple);border-radius:0 20px 20px 0;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;overflow:hidden;
+}
+.t-logo::after{
+  content:'';position:absolute;bottom:0;left:0;right:0;
+  height:50%;background:var(--purple-h);border-radius:20px 0 0 0;
+}
+.t-logo svg{position:relative;z-index:1}
+.t-right{display:flex;align-items:center;margin-left:auto}
+.t-btn{
+  width:56px;height:72px;background:none;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  color:#888EB0;transition:color .2s;
+}
+.t-btn:hover{color:#DFE3FA}
+.t-sep{width:1px;height:72px;background:rgba(255,255,255,.12)}
+.t-avatar{
+  width:32px;height:32px;border-radius:50%;background:#858BB2;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;color:#fff;margin:0 20px;
+}
+
+/* ── Page ── */
+.main{margin-left:103px;min-height:100vh;display:flex;flex-direction:column;flex:1}
+.page{width:100%;max-width:780px;margin:0 auto;padding:72px 48px 80px;flex:1}
+
+/* ════════════ LIST ════════════ */
+.lh{display:flex;align-items:center;gap:16px;margin-bottom:56px;padding-top:16px}
+.lh-title{flex:1}
+.lh-title h1{font-size:32px;font-weight:700;letter-spacing:-1px;color:var(--txt1);line-height:1.1}
+.lh-title p{font-size:13px;font-weight:500;color:var(--txt2);margin-top:5px}
+
+/* Filter */
+.fw{position:relative}
+.fb{
+  display:flex;align-items:center;gap:12px;
+  background:none;border:none;cursor:pointer;
+  font-family:'League Spartan',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;
+  color:var(--txt1);padding:6px 0;white-space:nowrap;
+}
+.fb:hover{color:var(--purple)}
+.fb:focus-visible{outline:2px solid var(--purple);border-radius:3px;outline-offset:3px}
+.fc{transition:transform .2s;display:flex}
+.fc.open{transform:rotate(180deg)}
+.fd{
+  position:absolute;top:calc(100% + 16px);left:50%;transform:translateX(-50%);
+  min-width:192px;background:var(--card);border-radius:8px;
+  box-shadow:0 10px 20px rgba(0,0,0,.25);
+  padding:24px;display:flex;flex-direction:column;gap:16px;z-index:500;
+}
+.fo{display:flex;align-items:center;gap:13px;cursor:pointer;user-select:none}
+.fchk{
+  width:16px;height:16px;
+  border:1px solid var(--inp-b);border-radius:2px;background:var(--inp);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  transition:background .15s,border-color .15s;
+}
+.fchk.on{background:var(--purple);border-color:var(--purple)}
+.fol{font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt1);text-transform:capitalize}
+
+/* New button */
+.btn-new{
+  display:flex;align-items:center;gap:12px;
+  background:var(--purple);color:#fff;border:none;border-radius:24px;
+  padding:8px 15px 8px 8px;
+  font-family:'League Spartan',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;
+  cursor:pointer;transition:background .2s;white-space:nowrap;
+}
+.btn-new:hover{background:var(--purple-h)}
+.btn-new:focus-visible{outline:2px solid var(--purple-h);outline-offset:2px}
+.bni{
+  width:32px;height:32px;border-radius:50%;background:#fff;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.bni svg{color:var(--purple)}
+
+/* Invoice rows – Desktop one-liner */
+.inv-list{display:flex;flex-direction:column;gap:16px}
+.inv-row{
+  background:var(--card);border-radius:8px;
+  padding:18px 24px 18px 32px;
+  display:grid;
+  grid-template-columns:100px 1fr 1fr 120px 120px 20px;
+  align-items:center;gap:20px;
+  cursor:pointer;border:1px solid transparent;
+  box-shadow:var(--shadow);
+  transition:border-color .2s,box-shadow .2s;
+}
+.inv-row:hover{border-color:var(--purple);box-shadow:0 10px 20px rgba(72,84,159,.18)}
+.inv-row:focus-visible{outline:2px solid var(--purple);outline-offset:2px;border-radius:8px}
+.inv-id{font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt1)}
+.inv-id span{color:var(--txt3)}
+.inv-due{font-size:13px;font-weight:500;color:var(--txt2)}
+.inv-client{font-size:15px;font-weight:500;color:var(--txt2)}
+.inv-amt{font-size:16px;font-weight:700;letter-spacing:-.8px;color:var(--txt1);text-align:right}
+.inv-arr{color:var(--purple);display:flex;align-items:center;justify-content:flex-end}
+
+/* Badge */
+.badge{
+  display:inline-flex;align-items:center;justify-content:center;gap:8px;
+  padding:10px 20px;border-radius:6px;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;min-width:104px;flex-shrink:0;
+}
+.badge-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.badge.paid{color:var(--paid-c);background:var(--paid-bg)}.badge.paid .badge-dot{background:var(--paid-c)}
+.badge.pending{color:var(--pend-c);background:var(--pend-bg)}.badge.pending .badge-dot{background:var(--pend-c)}
+.badge.draft{color:var(--draft-c);background:var(--draft-bg)}.badge.draft .badge-dot{background:var(--draft-c)}
+
+/* Empty */
+.empty{display:flex;flex-direction:column;align-items:center;padding:80px 24px;text-align:center}
+.empty h2{font-size:24px;font-weight:700;letter-spacing:-.75px;color:var(--txt1);margin:40px 0 16px}
+.empty p{font-size:13px;font-weight:500;color:var(--txt2);line-height:1.9;max-width:220px}
+.empty strong{color:var(--txt1)}
+
+/* ════════════ DETAIL ════════════ */
+.gback{
+  display:inline-flex;align-items:center;gap:22px;
+  background:none;border:none;cursor:pointer;
+  font-family:'League Spartan',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;
+  color:var(--txt1);margin-bottom:32px;padding:0;transition:color .2s;
+}
+.gback:hover{color:var(--txt2)}
+.gback:focus-visible{outline:2px solid var(--purple);border-radius:3px}
+
+/* Status bar */
+.sbar{
+  background:var(--card);border-radius:8px;
+  padding:20px 32px;display:flex;align-items:center;gap:16px;
+  box-shadow:var(--shadow);margin-bottom:24px;
+}
+.sbar-lbl{font-size:13px;font-weight:500;color:var(--txt2)}
+.sbar-space{flex:1}
+.sbar-acts{display:flex;align-items:center;gap:8px}
+
+/* Buttons */
+.btn{
+  padding:16px 24px;border-radius:24px;
+  font-family:'League Spartan',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;
+  border:none;cursor:pointer;transition:background .2s,color .2s;white-space:nowrap;line-height:1;
+}
+.btn:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+.btn-edit{background:var(--card2);color:var(--txt3)}
+.btn-edit:hover{background:var(--border)}
+[data-dark="1"] .btn-edit{background:var(--sidebar2);color:#DFE3FA}
+[data-dark="1"] .btn-edit:hover{background:#0C0E16}
+.btn-del{background:var(--red);color:#fff}.btn-del:hover{background:var(--red-h)}
+.btn-paid{background:var(--purple);color:#fff}.btn-paid:hover{background:var(--purple-h)}
+.btn-draft{background:var(--sidebar2);color:#888EB0}.btn-draft:hover{background:var(--total-bg);color:#DFE3FA}
+
+/* Detail card */
+.dcard{background:var(--card);border-radius:8px;padding:48px;box-shadow:var(--shadow)}
+.dtop{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:48px}
+.d-id{font-size:16px;font-weight:700;letter-spacing:-.8px;color:var(--txt1)}
+.d-id span{color:var(--txt3)}
+.d-desc{font-size:13px;font-weight:500;color:var(--txt2);margin-top:6px}
+.d-from{font-size:13px;font-weight:500;color:var(--txt2);line-height:1.9;text-align:right;font-style:normal}
+.dmeta{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-bottom:48px}
+.dmcol > .ml{font-size:13px;font-weight:500;color:var(--txt2);margin-bottom:12px;display:block}
+.dmcol > .mv{font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt1);display:block}
+.dmcol > .ma{font-size:13px;font-weight:500;color:var(--txt2);line-height:1.9;margin-top:8px;font-style:normal}
+.ml2{font-size:13px;font-weight:500;color:var(--txt2);margin-top:32px;margin-bottom:12px;display:block}
+.d-email{font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt1)}
+
+/* Items table */
+.itab{background:var(--card2);border-radius:8px 8px 0 0}
+[data-dark="1"] .itab{background:var(--sidebar2)}
+.ith{display:grid;grid-template-columns:1fr 60px 100px 100px;gap:16px;padding:32px 32px 12px;font-size:13px;font-weight:500;color:var(--txt2)}
+.ith span:nth-child(2){text-align:center}
+.ith span:nth-child(3),.ith span:last-child{text-align:right}
+.itr{display:grid;grid-template-columns:1fr 60px 100px 100px;gap:16px;padding:0 32px 16px;align-items:center}
+.itr:first-child{padding-top:8px}
+.it-name{font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt1)}
+.it-qty{font-size:15px;font-weight:700;color:var(--txt2);text-align:center}
+.it-price{font-size:15px;font-weight:700;color:var(--txt2);text-align:right}
+.it-total{font-size:15px;font-weight:700;color:var(--txt1);text-align:right}
+.ifoot{background:var(--total-bg);border-radius:0 0 8px 8px;padding:24px 32px;display:flex;justify-content:space-between;align-items:center}
+.ifoot-lbl{font-size:13px;font-weight:500;color:#DFE3FA}
+.ifoot-val{font-size:24px;font-weight:700;letter-spacing:-1px;color:#fff}
+
+/* ════════════ DRAWER ════════════ */
+.ov{
+  position:fixed;inset:0;background:var(--overlay);z-index:400;
+  opacity:0;pointer-events:none;transition:opacity .35s;
+}
+.ov.on{opacity:1;pointer-events:all}
+.drawer{
+  position:fixed;top:0;bottom:0;left:0;
+  width:min(719px,100vw);
+  background:var(--form-bg);border-radius:0 20px 20px 0;
+  display:flex;flex-direction:column;z-index:450;
+  transform:translateX(-100%);
+  transition:transform .38s cubic-bezier(.4,0,.2,1);
+  overflow:hidden;
+}
+.drawer.on{transform:translateX(0)}
+.dbody{
+  flex:1;overflow-y:auto;overflow-x:hidden;
+  scrollbar-width:thin;scrollbar-color:var(--scroll) transparent;
+}
+.dbody::-webkit-scrollbar{width:4px}
+.dbody::-webkit-scrollbar-thumb{background:var(--scroll);border-radius:4px}
+.dbi{padding:56px 56px 0}/* inner padding, overridden for desktop below */
+.dtitle{font-size:24px;font-weight:700;letter-spacing:-.75px;color:var(--txt1);margin-bottom:48px}
+.dtitle span{color:var(--txt3)}
+.fsec{font-size:13px;font-weight:700;letter-spacing:-.25px;color:var(--purple);margin-bottom:24px}
+.ff{margin-bottom:24px}
+.ff label{
+  display:flex;align-items:center;justify-content:space-between;
+  font-size:13px;font-weight:500;color:var(--txt2);margin-bottom:10px;
+}
+.ferr{color:var(--red);font-size:10px;font-weight:600}
+.ff input,.ff select{
+  width:100%;background:var(--inp);border:1px solid var(--inp-b);border-radius:4px;
+  padding:15px 20px;font-family:'League Spartan',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt1);
+  outline:none;transition:border-color .2s,box-shadow .2s;
+  appearance:none;-webkit-appearance:none;
+}
+.ff input::placeholder{color:var(--txt2);opacity:.6}
+.ff input:hover,.ff select:hover{border-color:var(--purple)}
+.ff input:focus,.ff select:focus{border-color:var(--purple);box-shadow:0 0 0 1px var(--purple)}
+.ff input.e,.ff select.e{border-color:var(--red)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+.sw{position:relative}.sw select{padding-right:44px;cursor:pointer}
+.sa{position:absolute;right:16px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--purple);display:flex}
+.dw{position:relative}.dw input{padding-right:44px;cursor:pointer}
+.dw input::-webkit-calendar-picker-indicator{opacity:0;position:absolute;right:0;top:0;width:44px;height:100%;cursor:pointer}
+.di{position:absolute;right:16px;top:50%;transform:translateY(-50%);pointer-events:none;color:var(--txt3);display:flex}
+.fdiv{height:1px;background:var(--border);margin:40px 0 32px}
+.ilh{font-size:18px;font-weight:700;letter-spacing:-.56px;color:#777F98;margin-bottom:16px}
+.ihr{display:grid;grid-template-columns:1fr 64px 100px 72px 32px;gap:16px;margin-bottom:8px}
+.ihr span{font-size:13px;font-weight:500;color:var(--txt2)}
+.idr{display:grid;grid-template-columns:1fr 64px 100px 72px 32px;gap:16px;margin-bottom:16px;align-items:center}
+.ict{font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt2);display:flex;align-items:center}
+.btn-ri{background:none;border:none;cursor:pointer;color:#888EB0;display:flex;align-items:center;justify-content:center;padding:4px;transition:color .2s}
+.btn-ri:hover{color:var(--red)}
+.btn-ri:focus-visible{outline:2px solid var(--red);border-radius:3px}
+.btn-ai{
+  width:100%;padding:18px;background:var(--card2);color:var(--txt3);border:none;border-radius:24px;
+  font-family:'League Spartan',sans-serif;font-size:15px;font-weight:700;letter-spacing:-.25px;
+  cursor:pointer;margin-top:8px;transition:background .2s,color .2s;
+}
+.btn-ai:hover{background:var(--border);color:var(--txt2)}
+[data-dark="1"] .btn-ai{background:var(--sidebar2);color:#DFE3FA}
+[data-dark="1"] .btn-ai:hover{background:#0C0E16}
+.fel{margin-top:24px}.fel p{font-size:10px;font-weight:600;color:var(--red);margin-bottom:5px}
+.dfooter{background:var(--form-bg);box-shadow:0 -8px 20px rgba(0,0,0,.08);flex-shrink:0}
+.dfi{padding:20px 56px;display:flex;align-items:center;gap:8px}
+.btn-disc{
+  background:none;border:none;font-family:'League Spartan',sans-serif;
+  font-size:15px;font-weight:700;letter-spacing:-.25px;color:var(--txt2);
+  cursor:pointer;padding:16px 24px;border-radius:24px;transition:background .2s,color .2s;
+}
+.btn-disc:hover{background:var(--card2);color:var(--txt1)}
+[data-dark="1"] .btn-disc{background:var(--sidebar2);color:#888EB0}
+[data-dark="1"] .btn-disc:hover{background:#0C0E16}
+.fsp{flex:1}
+
+/* Desktop: push form content past sidebar */
+@media(min-width:1024px){
+  .dbi{padding-left:calc(103px + 56px)}
+  .dfi{padding-left:calc(103px + 56px)}
+}
+
+/* ════════════ DELETE MODAL ════════════ */
+.mbd{
+  position:fixed;inset:0;background:var(--overlay);z-index:600;
+  display:flex;align-items:center;justify-content:center;padding:24px;
+}
+.mbox{
+  background:var(--card);border-radius:8px;padding:48px;
+  max-width:480px;width:100%;box-shadow:0 10px 40px rgba(0,0,0,.35);
+  animation:mpop .2s ease;
+}
+@keyframes mpop{from{transform:scale(.95);opacity:0}to{transform:scale(1);opacity:1}}
+.mbox h2{font-size:24px;font-weight:700;letter-spacing:-.75px;color:var(--txt1);margin-bottom:14px}
+.mbox p{font-size:13px;font-weight:500;color:var(--txt2);line-height:1.9;margin-bottom:24px}
+.macts{display:flex;justify-content:flex-end;gap:8px}
+
+/* ════════════ RESPONSIVE ════════════ */
+
+/* ── TABLET  769–1023 ── */
+@media(max-width:1023px){
+  .sidebar{display:none}
+  .topbar{display:flex}
+  .main{margin-left:0;padding-top:72px}
+  .page{padding:40px 24px 80px}
+
+  /* Detail */
+  .sbar{flex-wrap:wrap;gap:12px}
+  .sbar-lbl{flex:0 0 100%}
+  .sbar-space{display:none}
+  .sbar-acts{width:100%}
+  .dcard{padding:32px 24px}
+  .dtop{flex-direction:column;gap:32px}
+  .d-from{text-align:left}
+  .dmeta{grid-template-columns:1fr 1fr}
+  .ith{display:none}
+  .itr{grid-template-columns:1fr auto;grid-template-rows:auto auto;padding:12px 24px}
+  .it-name{grid-column:1;grid-row:1;font-size:14px}
+  .it-qty{grid-column:1;grid-row:2;text-align:left;font-size:12px;color:var(--txt3)}
+  .it-price{display:none}
+  .it-total{grid-column:2;grid-row:1/-1;display:flex;align-items:center;font-size:15px}
+  .ifoot{padding:20px 24px}
+
+  /* Drawer */
+  .drawer{width:100%;border-radius:0}
+  .dbi{padding:32px 24px 0}
+  .dfi{padding:16px 24px}
+  .g3{grid-template-columns:1fr 1fr}
+  .ihr{grid-template-columns:1fr 50px 80px 60px 32px;gap:12px}
+  .idr{grid-template-columns:1fr 50px 80px 60px 32px;gap:12px}
+}
+
+/* ── MOBILE  ≤ 600 ── */
+@media(max-width:600px){
+  .page{padding:32px 24px 100px}
+  .lh{margin-bottom:32px}
+  .lh-title h1{font-size:20px}
+
+  /* Filter: hide "by status" text */
+  .fb-txt{display:none}
+
+  /* Invoice list: card layout */
+  .inv-row{
+    grid-template-columns:1fr 1fr;
+    grid-template-rows:auto auto auto;
+    row-gap:12px;padding:24px;
+  }
+  .inv-id{grid-column:1;grid-row:1;align-self:start}
+  .inv-client{grid-column:2;grid-row:1;text-align:right;font-size:14px;align-self:start}
+  .inv-due{grid-column:1;grid-row:2;font-size:12px}
+  .inv-amt{grid-column:1;grid-row:3;font-size:15px;text-align:left;align-self:end}
+  .badge{grid-column:2;grid-row:2;margin-left:auto;align-self:center;justify-self:end;min-width:0;padding:8px 14px}
+  .inv-arr{grid-column:2;grid-row:3;justify-content:flex-end;align-self:end}
+
+  /* Action bar: fixed to bottom */
+  .sbar-acts{
+    position:fixed;bottom:0;left:0;right:0;
+    background:var(--card);padding:16px 24px;
+    box-shadow:0 -4px 16px rgba(0,0,0,.12);
+    justify-content:center;z-index:200;flex-wrap:wrap;
+  }
+  .sbar-acts .btn{flex:1;min-width:0;text-align:center;padding:14px 12px}
+  .mbox{padding:32px 24px}
+
+  /* New button: icon only */
+  .btn-new-lbl{display:none}
+  .btn-new{padding:8px}
+
+  /* Form grid adjustments */
+  .g3{grid-template-columns:1fr 1fr}
+  .g2{grid-template-columns:1fr}
+  .ihr{grid-template-columns:1fr 42px 70px 56px 28px;gap:8px}
+  .idr{grid-template-columns:1fr 42px 70px 56px 28px;gap:8px}
+}
+
+@media(max-width:375px){
+  .g3{grid-template-columns:1fr}
+  .btn-new{width:44px;height:44px;border-radius:50%;padding:0;justify-content:center}
+}
+
+/* Util */
+.sr{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef}=React;
+
+/* ── SEED DATA ── */
+const SEED=[
+  {id:'RT3080',status:'paid',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'Jensen Huang',clientEmail:'jensenh@mail.com',
+   clientAddress:{street:'84 Church Way',city:'Bradford',postCode:'BD1 9PB',country:'United Kingdom'},
+   invoiceDate:'2021-08-18',paymentTerms:1,description:'Re-branding',
+   items:[{name:'Brand Guidelines',qty:1,price:1800.90}]},
+  {id:'XM9141',status:'pending',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'Alex Grim',clientEmail:'alexgrim@mail.com',
+   clientAddress:{street:'84 Church Way',city:'Bradford',postCode:'BD1 9PB',country:'United Kingdom'},
+   invoiceDate:'2021-08-21',paymentTerms:30,description:'Graphic Design',
+   items:[{name:'Banner Design',qty:1,price:156.00},{name:'Email Design',qty:2,price:200.00}]},
+  {id:'RG0314',status:'paid',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'John Morrison',clientEmail:'jm@mail.com',
+   clientAddress:{street:'79 Dover Road',city:'Westhall',postCode:'IP19 3PF',country:'United Kingdom'},
+   invoiceDate:'2021-09-01',paymentTerms:30,description:'Logo Concept',
+   items:[{name:'Logo Sketches',qty:1,price:102.04},{name:'Brand Guidelines',qty:1,price:13900.29}]},
+  {id:'RT2080',status:'pending',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'Alysa Werner',clientEmail:'alysa@mail.com',
+   clientAddress:{street:'63 Warwick Road',city:'Carlisle',postCode:'CA20 2TN',country:'United Kingdom'},
+   invoiceDate:'2021-09-12',paymentTerms:30,description:'UI UX Design',
+   items:[{name:'UI Design',qty:1,price:102.04}]},
+  {id:'AA1449',status:'pending',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'Mellisa Clarke',clientEmail:'mellisa@mail.com',
+   clientAddress:{street:'46 Abbey Row',city:'Cambridge',postCode:'CB5 6EG',country:'United Kingdom'},
+   invoiceDate:'2021-09-14',paymentTerms:30,description:'Re-branding',
+   items:[{name:'New Logo',qty:1,price:1532.33},{name:'Brand Guidelines',qty:2,price:1250.00}]},
+  {id:'TY9141',status:'pending',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'Thomas Wayne',clientEmail:'thomas@mail.com',
+   clientAddress:{street:'3 Whitehaven Lane',city:'Yorkshire',postCode:'YO10 3JJ',country:'United Kingdom'},
+   invoiceDate:'2021-10-01',paymentTerms:30,description:'Logo Re-design',
+   items:[{name:'Logo Re-design',qty:1,price:3102.04},{name:'Letterhead',qty:1,price:3053.87}]},
+  {id:'FV2353',status:'draft',
+   senderAddress:{street:'19 Union Terrace',city:'London',postCode:'E1 3EZ',country:'United Kingdom'},
+   clientName:'Anita Wainwright',clientEmail:'anita@mail.com',
+   clientAddress:{street:'',city:'',postCode:'',country:''},
+   invoiceDate:'2021-10-13',paymentTerms:30,description:'Logo Design',
+   items:[{name:'Logo Design',qty:1,price:3040.00},{name:'Logomark',qty:1,price:62.04}]},
+];
+
+/* ── UTILS ── */
+const M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function fmtD(d){if(!d)return'';const dt=new Date(d+'T12:00:00Z');return`${dt.getUTCDate()} ${M[dt.getUTCMonth()]} ${dt.getUTCFullYear()}`}
+function addD(d,n){const dt=new Date(d+'T12:00:00Z');dt.setUTCDate(dt.getUTCDate()+n);return dt.toISOString().split('T')[0]}
+function due(inv){return addD(inv.invoiceDate,inv.paymentTerms)}
+function fmt(n){return'£ '+(parseFloat(n)||0).toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g,',')}
+function tot(items){return items.reduce((s,i)=>s+(parseFloat(i.price)||0)*(parseInt(i.qty)||0),0)}
+function uid(){const L='ABCDEFGHIJKLMNOPQRSTUVWXYZ';return L[~~(Math.random()*26)]+L[~~(Math.random()*26)]+(~~(Math.random()*9000)+1000)}
+const lsGet=(k,fb)=>{try{const v=localStorage.getItem(k);return v?JSON.parse(v):fb}catch{return fb}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{}};
+
+/* ── ICONS ── */
+const ILogo=({s=40})=>(
+  <svg width={s} height={s*.9} viewBox="0 0 40 37" fill="none" aria-hidden="true">
+    <path d="M10.69.063L0 36.679h14.605L25.3.063z" fill="#fff"/>
+    <path d="M25.3.063L14.605 36.679h14.604L39.904.063z" fill="#fff" fillOpacity=".5"/>
+  </svg>
+);
+const IMoon=()=>(
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+    <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+  </svg>
+);
+const ISun=()=>(
+  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+    <circle cx="10" cy="10" r="3.5" fill="currentColor"/>
+    {[[10,1,10,3],[10,17,10,19],[1,10,3,10],[17,10,19,10],[3.22,3.22,4.64,4.64],[15.36,15.36,16.78,16.78],[3.22,16.78,4.64,15.36],[15.36,4.64,16.78,3.22]].map(([x1,y1,x2,y2],i)=>(
+      <line key={i} x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+    ))}
+  </svg>
+);
+const IChevD=()=>(
+  <svg width="11" height="7" viewBox="0 0 11 7" fill="none" aria-hidden="true">
+    <path d="M1 1L5.5 5.5L10 1" stroke="#7C5DFA" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const IChevL=()=>(
+  <svg width="7" height="10" viewBox="0 0 7 10" fill="none" aria-hidden="true">
+    <path d="M6 1L2 5L6 9" stroke="#7C5DFA" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const IChevR=()=>(
+  <svg width="7" height="10" viewBox="0 0 7 10" fill="none" aria-hidden="true">
+    <path d="M1 1L5 5L1 9" stroke="#7C5DFA" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const IPlus=()=>(
+  <svg width="11" height="11" viewBox="0 0 11 11" fill="none" aria-hidden="true">
+    <path d="M5.5.5v10M.5 5.5h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+  </svg>
+);
+const ITrash=()=>(
+  <svg width="13" height="16" viewBox="0 0 13 16" fill="currentColor" aria-hidden="true">
+    <path d="M11.583 3.556h-2.417V2.667C9.166 1.194 7.972 0 6.5 0S3.833 1.194 3.833 2.667v.889H1.417C.636 3.556 0 4.191 0 4.973v.888h13v-.888c0-.782-.636-1.417-1.417-1.417zM4.722 2.667c0-.981.797-1.778 1.778-1.778s1.778.797 1.778 1.778v.889H4.722v-.889zM.889 7.111v7.111C.889 15.2 1.689 16 2.667 16h7.778c.977 0 1.777-.8 1.777-1.778V7.111H.889zm3.555 6.222H3.556V9.778h.888v3.555zm2.667 0H6.222V9.778h.889v3.555zm2.667 0H8.889V9.778h.888v3.555z"/>
+  </svg>
+);
+const ICal=()=>(
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+    <path d="M14 2h-1V0h-2v2H5V0H3v2H2C.9 2 0 2.9 0 4v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H2V6h12v10z"/>
+  </svg>
+);
+const ITick=()=>(
+  <svg width="10" height="8" viewBox="0 0 10 8" fill="none" aria-hidden="true">
+    <path d="M1 3.5L3.5 6L9 1" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+  </svg>
+);
+
+/* ── BADGE ── */
+function Badge({s}){
+  return(
+    <span className={`badge ${s}`} role="status" aria-label={`Status: ${s}`}>
+      <span className="badge-dot"/>{s.charAt(0).toUpperCase()+s.slice(1)}
+    </span>
+  );
+}
+
+/* ── EMPTY STATE ── */
+function Empty(){
+  return(
+    <div className="empty" role="status" aria-live="polite">
+      <svg width="240" height="200" viewBox="0 0 240 200" fill="none" aria-hidden="true">
+        <ellipse cx="120" cy="188" rx="120" ry="11" fill="#DFE3FA" fillOpacity=".35"/>
+        <path d="M40 100L120 50L200 100V175H40V100Z" fill="#F9FAFE" stroke="#DFE3FA" strokeWidth="1.5"/>
+        <path d="M40 100L120 148L200 100" stroke="#DFE3FA" strokeWidth="1.5"/>
+        <rect x="80" y="60" width="80" height="6" rx="3" fill="#DFE3FA"/>
+        <rect x="88" y="74" width="64" height="5" rx="2.5" fill="#DFE3FA" fillOpacity=".7"/>
+        <rect x="84" y="86" width="72" height="5" rx="2.5" fill="#DFE3FA" fillOpacity=".5"/>
+        <path d="M162 142l28-18-4 36z" fill="#7C5DFA" fillOpacity=".25"/>
+        <path d="M162 142l28-18-22 10z" fill="#7C5DFA" fillOpacity=".45"/>
+        <rect x="36" y="112" width="22" height="15" rx="2" fill="none" stroke="#DFE3FA" strokeWidth="1.5"/>
+        <path d="M36 112l11 8 11-8" stroke="#DFE3FA" strokeWidth="1.5"/>
+        <rect x="178" y="97" width="18" height="13" rx="2" fill="none" stroke="#DFE3FA" strokeWidth="1.5"/>
+        <path d="M178 97l9 6 9-6" stroke="#DFE3FA" strokeWidth="1.5"/>
+        <circle cx="120" cy="70" r="20" fill="#7C5DFA" fillOpacity=".12"/>
+        <path d="M107 100c0-7.2 5.8-13 13-13s13 5.8 13 13" fill="#7C5DFA" fillOpacity=".18"/>
+        <path d="M128 64l18-9v26l-18-9h-7V64h7z" fill="#7C5DFA"/>
+        <circle cx="136" cy="73" r="2.5" fill="#fff" fillOpacity=".8"/>
+        <path d="M130 77v7" stroke="#7C5DFA" strokeWidth="2.5" strokeLinecap="round"/>
+      </svg>
+      <h2>There is nothing here</h2>
+      <p>Create an invoice by clicking the <strong>New Invoice</strong> button and get started</p>
+    </div>
+  );
+}
+
+/* ── FORM ── */
+const BLANK={
+  sS:'',sC:'',sP:'',sCo:'',
+  cN:'',cE:'',cS:'',cC:'',cP:'',cCo:'',
+  date:'',terms:'30',desc:'',
+  items:[{name:'',qty:'1',price:''}],
+};
+function inv2form(inv){
+  return{
+    sS:inv.senderAddress.street,sC:inv.senderAddress.city,
+    sP:inv.senderAddress.postCode,sCo:inv.senderAddress.country,
+    cN:inv.clientName,cE:inv.clientEmail,
+    cS:inv.clientAddress.street,cC:inv.clientAddress.city,
+    cP:inv.clientAddress.postCode,cCo:inv.clientAddress.country,
+    date:inv.invoiceDate,terms:String(inv.paymentTerms),desc:inv.description,
+    items:inv.items.map(i=>({name:i.name,qty:String(i.qty),price:String(i.price)})),
+  };
+}
+function validate(f,draft){
+  const e={};
+  if(!draft){
+    if(!f.sS.trim())e.sS=1;if(!f.sC.trim())e.sC=1;if(!f.sP.trim())e.sP=1;if(!f.sCo.trim())e.sCo=1;
+    if(!f.cN.trim())e.cN=1;
+    if(!f.cE.trim()||!/\S+@\S+\.\S+/.test(f.cE))e.cE=1;
+    if(!f.cS.trim())e.cS=1;if(!f.cC.trim())e.cC=1;if(!f.cP.trim())e.cP=1;if(!f.cCo.trim())e.cCo=1;
+    if(!f.date)e.date=1;if(!f.desc.trim())e.desc=1;
+    if(!f.items.length)e.noItems=1;
+    f.items.forEach((it,i)=>{
+      if(!it.name.trim())e[`n${i}`]=1;
+      if(!it.qty||parseFloat(it.qty)<=0)e[`q${i}`]=1;
+      if(!it.price||parseFloat(it.price)<=0)e[`p${i}`]=1;
+    });
+  }
+  return e;
+}
+function buildInv(f,id,status){
+  return{
+    id:id||uid(),status,
+    senderAddress:{street:f.sS,city:f.sC,postCode:f.sP,country:f.sCo},
+    clientName:f.cN,clientEmail:f.cE,
+    clientAddress:{street:f.cS,city:f.cC,postCode:f.cP,country:f.cCo},
+    invoiceDate:f.date,paymentTerms:parseInt(f.terms)||30,
+    description:f.desc,
+    items:f.items.map(it=>({name:it.name,qty:parseInt(it.qty)||1,price:parseFloat(it.price)||0})),
+  };
+}
+
+function Form({invoice,isNew,onSave,onClose}){
+  const today=new Date().toISOString().split('T')[0];
+  const [f,setF]=useState(()=>invoice?inv2form(invoice):{...BLANK,date:today});
+  const [errs,setErrs]=useState({});
+  const [tried,setTried]=useState(false);
+  const s=(k,v)=>setF(p=>({...p,[k]:v}));
+  const si=(i,k,v)=>{const its=[...f.items];its[i]={...its[i],[k]:v};setF(p=>({...p,items:its}))};
+  const addItem=()=>setF(p=>({...p,items:[...p.items,{name:'',qty:'1',price:''}]}));
+  const rmItem=i=>setF(p=>({...p,items:p.items.filter((_,j)=>j!==i)}));
+
+  function go(draft,targetStatus){
+    const e=validate(f,draft);setErrs(e);setTried(true);
+    if(Object.keys(e).length&&!draft)return;
+    onSave(buildInv(f,invoice?.id,targetStatus||(invoice?.status||'pending')));
+  }
+
+  const showErr=tried&&Object.keys(errs).length>0;
+  const T=v=>typeof v==='number'?v.toFixed(2):((parseFloat(v)||0)*(parseFloat(v)||0)).toFixed(2);
+  const itTotal=(it)=>((parseFloat(it.price)||0)*(parseInt(it.qty)||0)).toFixed(2);
+
+  return(
+    <>
+    <div className="dbody">
+      <div className="dbi">
+        <h2 className="dtitle">{isNew?'New Invoice':<>Edit <span>#</span>{invoice.id}</>}</h2>
+
+        {/* Bill From */}
+        <p className="fsec">Bill From</p>
+        <div className="ff">
+          <label htmlFor="f-ss">Street Address{errs.sS&&<span className="ferr">can't be empty</span>}</label>
+          <input id="f-ss" value={f.sS} onChange={e=>s('sS',e.target.value)} className={errs.sS?'e':''} placeholder="19 Union Terrace"/>
+        </div>
+        <div className="g3">
+          <div className="ff">
+            <label htmlFor="f-sc">City{errs.sC&&<span className="ferr">required</span>}</label>
+            <input id="f-sc" value={f.sC} onChange={e=>s('sC',e.target.value)} className={errs.sC?'e':''} placeholder="London"/>
+          </div>
+          <div className="ff">
+            <label htmlFor="f-sp">Post Code{errs.sP&&<span className="ferr">required</span>}</label>
+            <input id="f-sp" value={f.sP} onChange={e=>s('sP',e.target.value)} className={errs.sP?'e':''} placeholder="E1 3EZ"/>
+          </div>
+          <div className="ff">
+            <label htmlFor="f-sco">Country{errs.sCo&&<span className="ferr">required</span>}</label>
+            <input id="f-sco" value={f.sCo} onChange={e=>s('sCo',e.target.value)} className={errs.sCo?'e':''} placeholder="United Kingdom"/>
+          </div>
+        </div>
+
+        <div className="fdiv"/>
+
+        {/* Bill To */}
+        <p className="fsec">Bill To</p>
+        <div className="ff">
+          <label htmlFor="f-cn">Client's Name{errs.cN&&<span className="ferr">can't be empty</span>}</label>
+          <input id="f-cn" value={f.cN} onChange={e=>s('cN',e.target.value)} className={errs.cN?'e':''} placeholder="e.g. Alex Grim"/>
+        </div>
+        <div className="ff">
+          <label htmlFor="f-ce">Client's Email{errs.cE&&<span className="ferr">invalid</span>}</label>
+          <input id="f-ce" type="email" value={f.cE} onChange={e=>s('cE',e.target.value)} className={errs.cE?'e':''} placeholder="e.g. email@example.com"/>
+        </div>
+        <div className="ff">
+          <label htmlFor="f-cs">Street Address{errs.cS&&<span className="ferr">can't be empty</span>}</label>
+          <input id="f-cs" value={f.cS} onChange={e=>s('cS',e.target.value)} className={errs.cS?'e':''} placeholder="84 Church Way"/>
+        </div>
+        <div className="g3">
+          <div className="ff">
+            <label htmlFor="f-cc">City{errs.cC&&<span className="ferr">required</span>}</label>
+            <input id="f-cc" value={f.cC} onChange={e=>s('cC',e.target.value)} className={errs.cC?'e':''} placeholder="Bradford"/>
+          </div>
+          <div className="ff">
+            <label htmlFor="f-cp">Post Code{errs.cP&&<span className="ferr">required</span>}</label>
+            <input id="f-cp" value={f.cP} onChange={e=>s('cP',e.target.value)} className={errs.cP?'e':''} placeholder="BD1 9PB"/>
+          </div>
+          <div className="ff">
+            <label htmlFor="f-cco">Country{errs.cCo&&<span className="ferr">required</span>}</label>
+            <input id="f-cco" value={f.cCo} onChange={e=>s('cCo',e.target.value)} className={errs.cCo?'e':''} placeholder="United Kingdom"/>
+          </div>
+        </div>
+
+        <div className="fdiv"/>
+
+        <div className="g2">
+          <div className="ff">
+            <label htmlFor="f-dt">Invoice Date{errs.date&&<span className="ferr">required</span>}</label>
+            <div className="dw">
+              <input id="f-dt" type="date" value={f.date} onChange={e=>s('date',e.target.value)}
+                className={errs.date?'e':''}
+                disabled={!isNew} style={!isNew?{opacity:.5,cursor:'not-allowed'}:{}}/>
+              <span className="di"><ICal/></span>
+            </div>
+          </div>
+          <div className="ff">
+            <label htmlFor="f-tr">Payment Terms</label>
+            <div className="sw">
+              <select id="f-tr" value={f.terms} onChange={e=>s('terms',e.target.value)}>
+                <option value="1">Net 1 Day</option>
+                <option value="7">Net 7 Days</option>
+                <option value="14">Net 14 Days</option>
+                <option value="30">Net 30 Days</option>
+              </select>
+              <span className="sa"><IChevD/></span>
+            </div>
+          </div>
+        </div>
+
+        <div className="ff">
+          <label htmlFor="f-ds">Project Description{errs.desc&&<span className="ferr">can't be empty</span>}</label>
+          <input id="f-ds" value={f.desc} onChange={e=>s('desc',e.target.value)} className={errs.desc?'e':''} placeholder="e.g. Graphic Design Service"/>
+        </div>
+
+        <div className="fdiv"/>
+
+        <p className="ilh">Item List</p>
+        <div className="ihr" aria-hidden="true">
+          <span>Item Name</span><span>Qty.</span><span>Price</span><span>Total</span><span/>
+        </div>
+        {f.items.map((it,i)=>(
+          <div className="idr" key={i}>
+            <div>
+              <label className="sr" htmlFor={`f-in${i}`}>Item name</label>
+              <input id={`f-in${i}`} value={it.name} onChange={e=>si(i,'name',e.target.value)}
+                className={errs[`n${i}`]?'e':''} style={{width:'100%'}} placeholder="Item name"/>
+            </div>
+            <div>
+              <label className="sr" htmlFor={`f-iq${i}`}>Qty</label>
+              <input id={`f-iq${i}`} type="number" min="1" value={it.qty}
+                onChange={e=>si(i,'qty',e.target.value)}
+                className={errs[`q${i}`]?'e':''}
+                style={{width:'100%',textAlign:'center'}}/>
+            </div>
+            <div>
+              <label className="sr" htmlFor={`f-ip${i}`}>Price</label>
+              <input id={`f-ip${i}`} type="number" min="0" step="0.01" value={it.price}
+                onChange={e=>si(i,'price',e.target.value)}
+                className={errs[`p${i}`]?'e':''} style={{width:'100%'}}/>
+            </div>
+            <div className="ict">{itTotal(it)}</div>
+            <button type="button" className="btn-ri" onClick={()=>rmItem(i)} aria-label={`Remove ${it.name||'item'}`}>
+              <ITrash/>
+            </button>
+          </div>
+        ))}
+        <button type="button" className="btn-ai" onClick={addItem}>+ Add New Item</button>
+
+        {showErr&&(
+          <div className="fel" role="alert" aria-live="assertive">
+            {Object.keys(errs).some(k=>!k.match(/^[nqp]\d/))&&<p>- All fields must be added</p>}
+            {errs.noItems&&<p>- An item must be added</p>}
+            {f.items.some((_,i)=>errs[`n${i}`]||errs[`p${i}`])&&<p>- Item fields must be valid</p>}
+          </div>
+        )}
+        <div style={{height:32}}/>
+      </div>
+    </div>
+
+    <footer className="dfooter">
+      <div className="dfi">
+        {isNew?(
+          <>
+            <button type="button" className="btn-disc" onClick={onClose}>Discard</button>
+            <div className="fsp"/>
+            <button type="button" className="btn btn-draft" onClick={()=>go(true,'draft')}>Save as Draft</button>
+            <button type="button" className="btn btn-paid" onClick={()=>go(false,'pending')}>Save &amp; Send</button>
+          </>
+        ):(
+          <>
+            <button type="button" className="btn-disc" onClick={onClose}>Cancel</button>
+            <div className="fsp"/>
+            <button type="button" className="btn btn-paid" onClick={()=>go(false,invoice.status)}>Save Changes</button>
+          </>
+        )}
+      </div>
+    </footer>
+    </>
+  );
+}
+
+/* ── APP ── */
+function App(){
+  const [invs,setInvs]=useState(()=>lsGet('inv3',SEED));
+  const [dark,setDark]=useState(()=>lsGet('dark3',false));
+  const [view,setView]=useState('list');
+  const [selId,setSelId]=useState(null);
+  const [drawerOpen,setDrawerOpen]=useState(false);
+  const [editId,setEditId]=useState(null);
+  const [delOpen,setDelOpen]=useState(false);
+  const [fOpen,setFOpen]=useState(false);
+  const [filters,setFilters]=useState([]);
+  const fRef=useRef();
+  const delRef=useRef();
+
+  useEffect(()=>{lsSet('inv3',invs)},[invs]);
+  useEffect(()=>{
+    lsSet('dark3',dark);
+    document.documentElement.setAttribute('data-dark',dark?'1':'0');
+  },[dark]);
+
+  // Close filter on outside click
+  useEffect(()=>{
+    const h=e=>{if(fRef.current&&!fRef.current.contains(e.target))setFOpen(false)};
+    document.addEventListener('mousedown',h);return()=>document.removeEventListener('mousedown',h);
+  },[]);
+
+  // ESC key
+  useEffect(()=>{
+    const h=e=>{
+      if(e.key==='Escape'){
+        if(delOpen)setDelOpen(false);
+        else if(drawerOpen){setDrawerOpen(false);setEditId(null);}
+        else if(fOpen)setFOpen(false);
+      }
+    };
+    document.addEventListener('keydown',h);return()=>document.removeEventListener('keydown',h);
+  },[delOpen,drawerOpen,fOpen]);
+
+  // Focus trap for delete modal
+  useEffect(()=>{
+    if(!delOpen||!delRef.current)return;
+    const el=delRef.current;
+    const btns=el.querySelectorAll('button');
+    btns[0]&&btns[0].focus();
+    const trap=e=>{
+      if(e.key!=='Tab')return;
+      const[f,l]=[btns[0],btns[btns.length-1]];
+      if(e.shiftKey){if(document.activeElement===f){e.preventDefault();l.focus();}}
+      else{if(document.activeElement===l){e.preventDefault();f.focus();}}
+    };
+    document.addEventListener('keydown',trap);return()=>document.removeEventListener('keydown',trap);
+  },[delOpen]);
+
+  const sel=invs.find(i=>i.id===selId);
+  const editInv=editId?invs.find(i=>i.id===editId):null;
+  const list=filters.length?invs.filter(i=>filters.includes(i.status)):invs;
+  const grand=sel?tot(sel.items):0;
+
+  function openNew(){setEditId(null);setDrawerOpen(true)}
+  function openEdit(){setEditId(selId);setDrawerOpen(true)}
+  function closeDrawer(){setDrawerOpen(false);setEditId(null)}
+  function saveInv(inv){
+    if(editId){setInvs(p=>p.map(i=>i.id===inv.id?inv:i));}
+    else{setInvs(p=>[inv,...p]);}
+    closeDrawer();
+    if(!editId){setSelId(inv.id);setView('detail');}
+  }
+  function doDelete(){setInvs(p=>p.filter(i=>i.id!==selId));setDelOpen(false);setView('list');setSelId(null)}
+  function markPaid(){setInvs(p=>p.map(i=>i.id===selId?{...i,status:'paid'}:i))}
+  function tglFilter(s){setFilters(p=>p.includes(s)?p.filter(x=>x!==s):[...p,s])}
+
+  return(
+    <div className="shell">
+      {/* ── Sidebar ── */}
+      <nav className="sidebar" aria-label="Navigation">
+        <div className="s-logo"><ILogo s={40}/></div>
+        <div className="s-bot">
+          <div className="s-rule"/>
+          <button className="s-btn" onClick={()=>setDark(d=>!d)} aria-label={dark?'Light mode':'Dark mode'}>
+            {dark?<ISun/>:<IMoon/>}
+          </button>
+          <div className="s-rule"/>
+          <div className="s-avatar" role="img" aria-label="User">AU</div>
+        </div>
+      </nav>
+
+      {/* ── Topbar ── */}
+      <header className="topbar">
+        <div className="t-logo"><ILogo s={28}/></div>
+        <div className="t-right">
+          <button className="t-btn" onClick={()=>setDark(d=>!d)} aria-label={dark?'Light mode':'Dark mode'}>
+            {dark?<ISun/>:<IMoon/>}
+          </button>
+          <div className="t-sep"/>
+          <div className="t-avatar" role="img" aria-label="User">AU</div>
+        </div>
+      </header>
+
+      <div className="main">
+        <div className="page">
+
+          {/* ════ LIST ════ */}
+          {view==='list'&&(
+            <>
+              <div className="lh">
+                <div className="lh-title">
+                  <h1>Invoices</h1>
+                  <p>{list.length===0?'No invoices':`There are ${list.length} ${filters.length?filters.join(' & '):'total'} invoices`}</p>
+                </div>
+
+                {/* Filter */}
+                <div className="fw" ref={fRef}>
+                  <button className="fb"
+                    onClick={()=>setFOpen(p=>!p)}
+                    aria-expanded={fOpen}
+                    aria-haspopup="listbox"
+                    aria-label="Filter by status">
+                    <span className="fb-txt">Filter by status</span>
+                    <span aria-hidden="true" style={{display:'contents'}}>Filter</span>
+                    <span className={`fc${fOpen?' open':''}`}><IChevD/></span>
+                  </button>
+                  {fOpen&&(
+                    <div className="fd" role="listbox" aria-multiselectable="true">
+                      {['draft','pending','paid'].map(st=>(
+                        <label key={st} className="fo">
+                          <span
+                            className={`fchk${filters.includes(st)?' on':''}`}
+                            role="checkbox"
+                            aria-checked={filters.includes(st)}
+                            onClick={()=>tglFilter(st)}
+                            tabIndex={0}
+                            onKeyDown={e=>{if(e.key==='Enter'||e.key===' ')tglFilter(st)}}>
+                            {filters.includes(st)&&<ITick/>}
+                          </span>
+                          <span className="fol" onClick={()=>tglFilter(st)}>{st}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* New Invoice */}
+                <button className="btn-new" onClick={openNew} aria-label="New invoice">
+                  <span className="bni"><IPlus/></span>
+                  <span className="btn-new-lbl">New Invoice</span>
+                </button>
+              </div>
+
+              {list.length===0?<Empty/>:(
+                <ul className="inv-list" aria-label="Invoice list">
+                  {list.map(inv=>(
+                    <li key={inv.id} style={{listStyle:'none'}}>
+                      <div className="inv-row"
+                        role="button" tabIndex={0}
+                        onClick={()=>{setSelId(inv.id);setView('detail')}}
+                        onKeyDown={e=>{if(e.key==='Enter'||e.key===' '){setSelId(inv.id);setView('detail')}}}
+                        aria-label={`Invoice ${inv.id}, ${inv.clientName}, ${fmt(tot(inv.items))}, ${inv.status}`}>
+                        <span className="inv-id"><span>#</span>{inv.id}</span>
+                        <span className="inv-due">Due&nbsp;&nbsp;{fmtD(due(inv))}</span>
+                        <span className="inv-client">{inv.clientName}</span>
+                        <span className="inv-amt">{fmt(tot(inv.items))}</span>
+                        <Badge s={inv.status}/>
+                        <span className="inv-arr" aria-hidden="true"><IChevR/></span>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>
+          )}
+
+          {/* ════ DETAIL ════ */}
+          {view==='detail'&&sel&&(
+            <>
+              <button className="gback" onClick={()=>setView('list')} aria-label="Back to invoices">
+                <IChevL/> Go back
+              </button>
+
+              <div className="sbar">
+                <span className="sbar-lbl">Status</span>
+                <Badge s={sel.status}/>
+                <div className="sbar-space"/>
+                <div className="sbar-acts">
+                  <button className="btn btn-edit" onClick={openEdit}>Edit</button>
+                  <button className="btn btn-del" onClick={()=>setDelOpen(true)}>Delete</button>
+                  {sel.status!=='paid'&&(
+                    <button className="btn btn-paid" onClick={markPaid}>Mark as Paid</button>
+                  )}
+                </div>
+              </div>
+
+              <article className="dcard">
+                <div className="dtop">
+                  <div>
+                    <div className="d-id"><span>#</span>{sel.id}</div>
+                    <div className="d-desc">{sel.description}</div>
+                  </div>
+                  <address className="d-from">
+                    {sel.senderAddress.street}<br/>
+                    {sel.senderAddress.city}<br/>
+                    {sel.senderAddress.postCode}<br/>
+                    {sel.senderAddress.country}
+                  </address>
+                </div>
+
+                <div className="dmeta">
+                  <div className="dmcol">
+                    <span className="ml">Invoice Date</span>
+                    <span className="mv">{fmtD(sel.invoiceDate)}</span>
+                    <span className="ml2">Payment Due</span>
+                    <span className="mv">{fmtD(due(sel))}</span>
+                  </div>
+                  <div className="dmcol">
+                    <span className="ml">Bill To</span>
+                    <span className="mv">{sel.clientName}</span>
+                    <address className="ma">
+                      {sel.clientAddress.street&&<>{sel.clientAddress.street}<br/></>}
+                      {sel.clientAddress.city&&<>{sel.clientAddress.city}<br/></>}
+                      {sel.clientAddress.postCode&&<>{sel.clientAddress.postCode}<br/></>}
+                      {sel.clientAddress.country}
+                    </address>
+                  </div>
+                  <div className="dmcol">
+                    <span className="ml">Sent to</span>
+                    <span className="d-email">{sel.clientEmail}</span>
+                  </div>
+                </div>
+
+                <div className="itab">
+                  <div className="ith" aria-hidden="true">
+                    <span>Item Name</span><span>QTY.</span><span>Price</span><span>Total</span>
+                  </div>
+                  {sel.items.map((it,i)=>(
+                    <div className="itr" key={i}>
+                      <span className="it-name">{it.name}</span>
+                      <span className="it-qty">{it.qty}</span>
+                      <span className="it-price">{fmt(it.price)}</span>
+                      <span className="it-total">{fmt(it.price*it.qty)}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="ifoot">
+                  <span className="ifoot-lbl">Amount Due</span>
+                  <span className="ifoot-val">{fmt(grand)}</span>
+                </div>
+              </article>
+            </>
+          )}
+
+        </div>
+      </div>
+
+      {/* ════ DRAWER ════ */}
+      <div
+        className={`ov${drawerOpen?' on':''}`}
+        onClick={e=>{if(e.target===e.currentTarget)closeDrawer()}}
+        aria-hidden="true"
+      />
+      <div
+        className={`drawer${drawerOpen?' on':''}`}
+        role="dialog"
+        aria-modal="true"
+        aria-label={editId?`Edit invoice #${editId}`:'New invoice'}
+        aria-hidden={!drawerOpen}
+      >
+        {drawerOpen&&(
+          <Form invoice={editInv} isNew={!editId} onSave={saveInv} onClose={closeDrawer}/>
+        )}
+      </div>
+
+      {/* ════ DELETE MODAL ════ */}
+      {delOpen&&(
+        <div
+          className="mbd"
+          role="dialog" aria-modal="true" aria-labelledby="del-h"
+          onClick={e=>{if(e.target===e.currentTarget)setDelOpen(false)}}
+        >
+          <div className="mbox" ref={delRef}>
+            <h2 id="del-h">Confirm Deletion</h2>
+            <p>Are you sure you want to delete invoice #{selId}? This action cannot be undone.</p>
+            <div className="macts">
+              <button className="btn btn-edit" onClick={()=>setDelOpen(false)}>Cancel</button>
+              <button className="btn btn-del" onClick={doDelete}>Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
